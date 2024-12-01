@@ -16,6 +16,27 @@ app.post('/signup', (req, res) => {
         });
     }
 
+    if (user_id.length < 6 || user_id.length > 20 || password.length < 8 || password.length > 20) {
+        return res.status(400).json({ 
+            message: "Account creation failed",
+            cause: "length of user_id or password does not meet the requirements",
+        });
+    }
+
+    if (!/^[a-zA-Z0-9]+$/.test(user_id)) {
+        return res.status(400).json({ 
+            message: "Account creation failed",
+            cause: "user_id does not meet the required pattern",
+        });
+    }
+
+    if (!/^[!-~]+$/.test(password)) {
+        return res.status(400).json({ 
+            message: "Account creation failed",
+            cause: "password does not meet the required pattern",
+        });
+    }
+
     res.status(200).json({        
         message: "Account successfully created",
         user: {
