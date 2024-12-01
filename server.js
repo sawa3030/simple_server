@@ -78,9 +78,40 @@ app.get('/users/:user_id', (req, res) => {
     const decoded = Buffer.from(encoded, 'base64').toString('utf-8'); 
     const [authUserId, password] = decoded.split(':');
 
-    // if (authUserId !== user_id) {
-    //     return res.status(401).json({ message: 'Authentication Failed' });
-    // }
+    const user = users[authUserId];
+    if (!user) {
+        return res.status(404).json({ message: `No User found` });
+    }
+
+    const { nickname, comment } = req.body;
+
+    if(!nickname && !comment) {
+        return res.status(400).json({ 
+            message: "User updation failed",
+            cause: "required nickname or comment",
+        });
+    }
+
+    res.status(200).json({
+        message: 'User successfully updated',
+        recipe: {
+            nickname: nickname,
+            comment: comment,
+        }
+    });
+});
+
+app.patch('/users/:user_id', (req, res) => {
+    const { user_id } = req.params;
+
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Basic ')) {
+        return res.status(401).json({ message: 'Authentication Failed' });
+    }
+
+    const encoded = authHeader.split(' ')[1];
+    const decoded = Buffer.from(encoded, 'base64').toString('utf-8'); 
+    const [authUserId, password] = decoded.split(':');
 
     const user = users[authUserId];
     if (!user) {
