@@ -128,6 +128,26 @@ app.patch('/users/:user_id', (req, res) => {
     });
 });
 
+app.post('/close', (req, res) => {
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Basic ')) {
+        return res.status(401).json({ message: 'Authentication Failed' });
+    }
+
+    const encoded = authHeader.split(' ')[1];
+    const decoded = Buffer.from(encoded, 'base64').toString('utf-8'); 
+    const [authUserId, password] = decoded.split(':');
+
+    const user = users[authUserId];
+    if (!user) {
+        return res.status(404).json({ message: `No User found` });
+    }
+
+    res.status(200).json({
+        message: 'Account and user successfully removed',
+    });
+});
+
 app.listen(PORT, () => {
     console.log(`Server is running on http://localhost:${PORT}`);
 });
