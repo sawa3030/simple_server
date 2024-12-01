@@ -20,7 +20,7 @@ app.post('/signup', (req, res) => {
     if (!user_id || !password) {
         return res.status(400).json({ 
             message: "Account creation failed",
-            cause: "requried user_id and password",
+            cause: "required user_id and password",
         });
     }
 
@@ -110,6 +110,10 @@ app.patch('/users/:user_id', (req, res) => {
         return res.status(404).json({ message: `No User found` });
     }
 
+    if (user_id !== authUserId) {
+        return res.status(403).json({ message: 'No Permission for Update' });
+    }
+
     const { nickname, comment } = req.body;
 
     if(!nickname && !comment) {
@@ -126,6 +130,14 @@ app.patch('/users/:user_id', (req, res) => {
             comment: comment,
         }
     });
+
+    if (nickname) {
+        user.nickname = nickname;
+    }
+
+    if (comment) {
+        user.comment = comment;
+    }
 });
 
 app.post('/close', (req, res) => {
@@ -146,6 +158,8 @@ app.post('/close', (req, res) => {
     res.status(200).json({
         message: 'Account and user successfully removed',
     });
+
+    delete users[authUserId];
 });
 
 app.listen(PORT, () => {
