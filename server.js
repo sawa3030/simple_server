@@ -11,19 +11,17 @@ app.post('/signup', (req, res) => {
 
     if (!user_id || !password) {
         return res.status(400).json({ 
-            message: 'Account creation failed',
-            cause: 'requried user_id and password'
-
+            message: "Account creation failed",
+            cause: "requried user_id and password",
         });
     }
 
-    res.status(201).json({        
+    res.status(200).json({        
         message: "Account successfully created",
         user: {
-            user_id: "TaroYamada",
-            nickname: "TaroYamada"
+            user_id: user_id,
+            nickname: user_id,
         }
-        
     });
 });
 
