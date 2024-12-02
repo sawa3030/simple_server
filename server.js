@@ -31,17 +31,10 @@ app.post('/signup', (req, res) => {
         });
     }
 
-    if (!/^[a-zA-Z0-9]+$/.test(user_id)) {
+    if (!/^[a-zA-Z0-9]+$/.test(user_id) || !/^[!-~]+$/.test(password)) {
         return res.status(400).json({ 
             message: "Account creation failed",
-            cause: "user_id does not meet the required pattern",
-        });
-    }
-
-    if (!/^[!-~]+$/.test(password)) {
-        return res.status(400).json({ 
-            message: "Account creation failed",
-            cause: "password does not meet the required pattern",
+            cause: "user_id or password does not meet the required pattern",
         });
     }
 
@@ -52,6 +45,11 @@ app.post('/signup', (req, res) => {
         });
     }
 
+    users[user_id] = {
+        password: password,
+        nickname: user_id,
+    };
+
     res.status(200).json({        
         message: "Account successfully created",
         user: {
@@ -59,11 +57,6 @@ app.post('/signup', (req, res) => {
             nickname: user_id,
         }
     });
-
-    users[user_id] = {
-        password: password,
-        nickname: user_id,
-    };
 });
 
 app.get('/users/:user_id', (req, res) => {
@@ -83,13 +76,22 @@ app.get('/users/:user_id', (req, res) => {
         return res.status(404).json({ message: `No User found` });
     }
 
+    if (password !== user.password) {
+        return res.status(401).json({ message: 'Authentication Failed' });
+    }
+
+    const responseUser = {
+        user_id: authUserId,
+        nickname: user.nickname,
+    };
+    
+    if (user.comment && user.comment != null) {
+        responseUser.comment = user.comment;
+    }
+    
     res.status(200).json({
         message: 'User details by user_id',
-        user: {
-            user_id: authUserId,
-            nickname: user.nickname,
-            comment: user.comment,
-        }
+        user: responseUser,
     });
 });
 
@@ -114,7 +116,11 @@ app.patch('/users/:user_id', (req, res) => {
         return res.status(403).json({ message: 'No Permission for Update' });
     }
 
-    const { nickname, comment } = req.body;
+    if (password !== user.password) {
+        return res.status(401).json({ message: 'Authentication Failed' });
+    }
+
+    const { nickname, comment, requested_user_id, requested_password } = req.body;
 
     if(!nickname && !comment) {
         return res.status(400).json({ 
@@ -123,21 +129,42 @@ app.patch('/users/:user_id', (req, res) => {
         });
     }
 
-    res.status(200).json({
-        message: 'User successfully updated',
-        recipe: {
-            nickname: nickname,
-            comment: comment,
-        }
-    });
+    if (requested_user_id || requested_password) {
+        return res.status(403).json({ 
+            message: 'User updation failed',
+            cause: "not updatable user_id and password",
+         });   
+    }
+
+    if (nickname.length > 30){
+        return res.status(400).json({ 
+            message: "User updation failed",
+            cause: "length of nickname does not meet the requirements",
+        });
+    }
+
+    if (comment.length > 100){
+        return res.status(400).json({
+            message: "User updation failed",
+            cause: "length of comment does not meet the requirements",
+        });
+    }
 
     if (nickname) {
-        user.nickname = nickname;
+        user.nickname = nickname === "" ? user.user_id : nickname;
     }
 
     if (comment) {
-        user.comment = comment;
+        user.commnet = comment === "" ? null : comment;
     }
+
+    res.status(200).json({
+        message: 'User successfully updated',
+        recipe: {
+            nickname: user.nickname,
+            comment: user.comment,
+        }
+    });
 });
 
 app.post('/close', (req, res) => {
@@ -155,11 +182,15 @@ app.post('/close', (req, res) => {
         return res.status(404).json({ message: `No User found` });
     }
 
+    if (password !== user.password) {
+        return res.status(401).json({ message: 'Authentication Failed' });
+    }
+
+    delete users[authUserId];
+
     res.status(200).json({
         message: 'Account and user successfully removed',
     });
-
-    delete users[authUserId];
 });
 
 app.listen(PORT, () => {
